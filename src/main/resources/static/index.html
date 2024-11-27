@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI Document Prototype</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        #container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevent layout shift */
+        }
+
+        #output {
+            flex: 1;
+            border: 1px solid #ccc;
+            margin: 10px;
+            padding: 10px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+
+        .output .content {
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        #input-container {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: #ffffff;
+            box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            bottom: 0;
+            z-index: 1000;
+        }
+
+        #question {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        #send, #upload {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        #processing {
+            display: none;
+            margin: 10px;
+            font-style: italic;
+            color: gray;
+        }
+
+        #fileInput {
+            margin-left: 10px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #e1f5fe;
+            border-left: 4px solid #0288d1;
+        }
+
+        .message .question {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+<div id="container">
+    <div id="output"></div>
+    <div id="processing">Processing...</div>
+    <div id="input-container">
+        <input type="text" id="question" placeholder="Enter your question here">
+        <button id="send">Send</button>
+        <input type="file" id="fileInput" accept="application/pdf">
+        <button id="upload">Upload PDF</button>
+    </div>
+</div>
+
+<script>
+    function scrollToBottom() {
+        const outputDiv = document.getElementById('output');
+        outputDiv.scrollTop = outputDiv.scrollHeight;
+    }
+
+    function showProcessingMessage() {
+        const processingMessage = document.getElementById('processing');
+        processingMessage.style.display = 'block';
+        processingMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function sendMessage() {
+        const question = document.getElementById('question').value;
+        if (question.trim() === '') {
+            alert('Please enter a question');
+            return;
+        }
+
+        const sendButton = document.getElementById('send');
+        const questionInput = document.getElementById('question');
+
+        sendButton.disabled = true;
+        questionInput.disabled = true;
+        showProcessingMessage();
+
+        try {
+            const response = await fetch('http://localhost:8080/da/rag', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: question })
+            });
+
+            const result = await response.json();
+            const outputDiv = document.getElementById('output');
+            const newMessage = document.createElement('div');
+            newMessage.classList.add('message');
+
+            newMessage.innerHTML = `
+                <div class="question">Q: ${question}</div>
+                <div class="content">${result.generation}</div>
+            `;
+            outputDiv.appendChild(newMessage);
+            scrollToBottom();
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            sendButton.disabled = false;
+            questionInput.disabled = false;
+            document.getElementById('processing').style.display = 'none';
+            questionInput.value = '';
+            questionInput.focus();
+        }
+    }
+
+    async function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Please select a PDF file to upload');
+            return;
+        }
+
+        const uploadButton = document.getElementById('upload');
+
+        uploadButton.disabled = true;
+        showProcessingMessage();
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('http://localhost:8080/da/store', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.text();
+            const outputDiv = document.getElementById('output');
+            const newMessage = document.createElement('div');
+            newMessage.classList.add('message');
+
+            newMessage.innerHTML = `
+                <div class="content">File uploaded: ${file.name}</div>
+                <div class="content">${result}</div>
+            `;
+            outputDiv.appendChild(newMessage);
+            scrollToBottom();
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            uploadButton.disabled = false;
+            document.getElementById('processing').style.display = 'none';
+            fileInput.value = '';
+        }
+    }
+
+    document.getElementById('send').addEventListener('click', sendMessage);
+    document.getElementById('upload').addEventListener('click', uploadFile);
+
+    document.getElementById('question').addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    });
+</script>
+</body>
+</html>
