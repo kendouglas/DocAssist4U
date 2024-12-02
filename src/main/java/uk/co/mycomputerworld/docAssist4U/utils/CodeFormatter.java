@@ -4,6 +4,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ *
+ * <p>
  * The CodeFormatter class provides utility methods to format Java code blocks
  * within a text to HTML format. It identifies Java code sections marked with
  * ```java and converts them into HTML code blocks.

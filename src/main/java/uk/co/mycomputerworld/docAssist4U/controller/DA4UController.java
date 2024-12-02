@@ -35,6 +35,7 @@ public class DA4UController {
     @Value("${config.tempDir}")
     private String TEMP_DIR;
 
+
     /**
      * Constructor for DA4UController.
      *
@@ -50,7 +51,6 @@ public class DA4UController {
         logger.info("Controller started.");
     }
 
-
     /**
      * Endpoint to perform RAG (Retrieval-Augmented Generation) operation.
      *
@@ -62,7 +62,7 @@ public class DA4UController {
         logger.info("rag2 called {}", message.getMessage());
 
         // Get the original generation value
-        String originalValue = this.ragVectorService.rag(message.getMessage());
+        String originalValue = this.ragVectorService.getAnswer(message.getMessage());
 
         // Replace \n with <BR> in the original value
         String modifiedValue = originalValue.replace("\n", "<BR>");
@@ -74,6 +74,11 @@ public class DA4UController {
 
         return ragMap;
     }
+
+//    @GetMapping("/list")
+//    public List<String> listOfPoints() {
+//        return this.ragVectorService.listPointIds();
+//    }
 
     /**
      * Endpoint to perform embedding operation.
