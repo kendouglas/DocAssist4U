@@ -79,12 +79,12 @@ public class VectorService {
     }
 
     public String getAnswer(String question) {
-        logger.info("GetAnswer question=" + question);
-// Combine system message retrieval and AI model call into a single operation
+        logger.info("GetAnswer question= {}", question);
+        // Combine system message retrieval and AI model call into a single operation
         ChatResponse aiResponse = aiClient.call(new Prompt(List.of(
                 getRelevantDocs(question),
                 new UserMessage(question))));
-        logger.info("GetAnswer aiResponse size=" + aiResponse.getResults().size());
+        logger.info("GetAnswer aiResponse size={}", aiResponse.getResults().size());
         // Log only necessary information, and use efficient string formatting
         logger.info("Asked AI model and received response.");
         return aiResponse.getResult().getOutput().getContent();
@@ -103,9 +103,10 @@ public class VectorService {
         String documents = similarDocuments.stream()
                 .map(Document::getContent)
                 .collect(Collectors.joining("\n"));
+
         // Log the document count efficiently
         if (logger.isInfoEnabled()) {
-            logger.info("documents size ==" + similarDocuments.size());
+            logger.info("documents size =={}", similarDocuments.size());
         }
         SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(this.systemPromptResource);
 
